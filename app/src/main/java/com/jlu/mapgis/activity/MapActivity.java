@@ -91,37 +91,47 @@ public class MapActivity extends AppCompatActivity {
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_map);
-        //获取前一个activity传递的参数
-        Intent intent = getIntent();
-        path=intent.getStringExtra("mapPath");
+        try {
+            super.onCreate(savedInstanceState);
+            setContentView(R.layout.activity_map);
 
-        //构建工具栏
-        String mapName=intent.getStringExtra("mapName");
-        StringBuilder toolBarTitle=new StringBuilder();
-        toolBarTitle.append("当前地图").append("  ").append(mapName);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        toolbar.setTitle(toolBarTitle.toString());
-        setSupportActionBar(toolbar);
+            com.zondy.mapgis.android.environment.Environment.initialize(rootPath, this);
+            com.zondy.mapgis.android.environment.Environment.setSystemLibraryPath(rootPath);
+            com.zondy.mapgis.android.environment.Environment.requestAuthorization(this, new Environment.AuthorizeCallback() {
+                public void onComplete() {
+                    try {
+                        //获取前一个activity传递的参数
+                        Intent intent = getIntent();
+                        path = intent.getStringExtra("mapPath");
 
-        //初始化组件
-        initCoponet();
+                        //构建工具栏
+                        String mapName = intent.getStringExtra("mapName");
+                        StringBuilder toolBarTitle = new StringBuilder();
+                        toolBarTitle.append("当前地图").append("  ").append(mapName);
+                        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+                        toolbar.setTitle(toolBarTitle.toString());
+                        setSupportActionBar(toolbar);
 
-        //浮动按钮点击事件
-        fab.setOnClickListener(fabClickListener);
+                        //初始化组件
+                        initCoponet();
 
-        com.zondy.mapgis.android.environment.Environment.initialize(rootPath , this);
-        com.zondy.mapgis.android.environment.Environment.setSystemLibraryPath(rootPath );
-        com.zondy.mapgis.android.environment.Environment.requestAuthorization(this, new Environment.AuthorizeCallback() {
-            public void onComplete() {
-                initMap();
-                //初始化搜索框
-                initSearchView();
-                //搜索按钮事件
-                searchView.setOnQueryTextListener(searchViewListener);
-            }
-        });
+                        //浮动按钮点击事件
+                        fab.setOnClickListener(fabClickListener);
+
+                        initMap();
+                        //初始化搜索框
+                        initSearchView();
+                        //搜索按钮事件
+                        searchView.setOnQueryTextListener(searchViewListener);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -132,7 +142,7 @@ public class MapActivity extends AppCompatActivity {
      * @since JDK 1.6
      *
      */
-    private void initSearchView() {
+    private void initSearchView() throws Exception {
         searchView = (MaterialSearchView) findViewById(R.id.search_view);
         searchView.setHint("请输入要在地图中搜索的内容");
         searchView.setSuggestions(getAllFeatureName());
@@ -148,23 +158,27 @@ public class MapActivity extends AppCompatActivity {
      *
      * @return
      */
-    private String[] getAllFeatureName() {
+    private String[] getAllFeatureName() throws Exception {
         VectorLayer vectorLayer=getActivLayer();
-        FeatureQuery featureQuery = new FeatureQuery(vectorLayer);
-        featureQuery.setOutFields("ZLDWMC");
-        FeaturePagedResult res = featureQuery.query();
-        int pageCount = res.getPageCount();
-        Set<String> resultLst=new HashSet<>();
-        for(int i=0;i<pageCount;i++){
-            List<Feature> datas = res.getPage(i);
-            for(Feature feature:datas){
-                String memo = feature.getAttributes().get("ZLDWMC");
-                resultLst.add(memo);
-                featureMap.put(memo,feature);
+        if(vectorLayer!=null){
+            FeatureQuery featureQuery = new FeatureQuery(vectorLayer);
+            featureQuery.setOutFields("ZLDWMC");
+            FeaturePagedResult res = featureQuery.query();
+            int pageCount = res.getPageCount();
+            Set<String> resultLst=new HashSet<>();
+            for(int i=0;i<pageCount;i++){
+                List<Feature> datas = res.getPage(i);
+                for(Feature feature:datas){
+                    String memo = feature.getAttributes().get("ZLDWMC");
+                    resultLst.add(memo);
+                    featureMap.put(memo,feature);
+                }
             }
+            return resultLst.toArray(new String[]{});
+        } else{
+            return  new String[]{};
         }
 
-        return resultLst.toArray(new String[]{});
     }
 
 
@@ -179,7 +193,7 @@ public class MapActivity extends AppCompatActivity {
      * @return
      */
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    public boolean onCreateOptionsMenu(Menu menu)  {
         getMenuInflater().inflate(R.menu.menu_search_view, menu);
         //找到searchView
         MenuItem searchItem = menu.findItem(R.id.action_search);
@@ -196,7 +210,7 @@ public class MapActivity extends AppCompatActivity {
      * @since JDK 1.6
      *
      */
-    private void initCoponet() {
+    private void initCoponet() throws Exception {
         // 悬浮按钮
         fab=(FloatingActionButton) findViewById(R.id.fab);
         //获取地图组件
@@ -228,7 +242,7 @@ public class MapActivity extends AppCompatActivity {
      * @date:2018/11/28
      * @since JDK 1.6
      */
-    private void initMap() {
+    private void initMap() throws Exception {
         mMapView.loadFromFile(path);
         // 显示缩放按钮
         mMapView.setZoomControlsEnabled(false);
@@ -252,15 +266,19 @@ public class MapActivity extends AppCompatActivity {
      */
     MapView.MapViewTapListener mapViewTapListener = new MapView.MapViewTapListener() {
         public void mapViewTap(PointF pointf) {
-            //点坐标转换
-            Dot point = mMapView.viewPointToMapPoint(pointf);
-            VectorLayer vectorLayer=getActivLayer();
-            List<FeatureBean> featureLst= getFeatureByPoint(vectorLayer,point);
-            if(!CollectionUtils.isEmpty(featureLst)){
-                //弹出列表
-                FeatureAdapter arrayAdapter = new FeatureAdapter(MapActivity.this,R.layout.feature_bean,featureLst);
-                featureListView.setAdapter(arrayAdapter);
-                dialog.show();
+            try {
+                //点坐标转换
+                Dot point = mMapView.viewPointToMapPoint(pointf);
+                VectorLayer vectorLayer=getActivLayer();
+                List<FeatureBean> featureLst= getFeatureByPoint(vectorLayer,point);
+                if(!CollectionUtils.isEmpty(featureLst)){
+                    //弹出列表
+                    FeatureAdapter arrayAdapter = new FeatureAdapter(MapActivity.this,R.layout.feature_bean,featureLst);
+                    featureListView.setAdapter(arrayAdapter);
+                    dialog.show();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     };
@@ -316,23 +334,31 @@ public class MapActivity extends AppCompatActivity {
     View.OnClickListener fabClickListener=new View.OnClickListener() {
         public void onClick(View v) {
             // 提供了访问系统位置服务。 这些 服务允许应用程序获得的定期更新 设备的地理位置
-            LocationManager mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-            // 返回当前启用/禁用状态给定的提供者。
-            if (!mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                Toast.makeText(MapActivity.this, "请开启GPS", Toast.LENGTH_SHORT).show();
-                // 打开GPS操作
-                Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                startActivityForResult(intent, 0);
-                return;
-            }
-            // 返回最符合给定条件的提供者的名称
-            String bestProvider = mLocationManager.getBestProvider(getCriteria(), true);
-            // 位置信息，通过Location可以获取时间、经纬度、海拔等位置信息
-            @SuppressLint("MissingPermission") Location location = mLocationManager.getLastKnownLocation(bestProvider);
-            if (location == null) {
-                Toast.makeText(MapActivity.this, "定位失败，建议在室外定位", Toast.LENGTH_SHORT).show();
-            } else {
-                updateView(location.getLongitude(), location.getLatitude());
+            try {
+                LocationManager mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                // 返回当前启用/禁用状态给定的提供者。
+                if (!mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                    Toast.makeText(MapActivity.this, "请开启GPS", Toast.LENGTH_SHORT).show();
+                    // 打开GPS操作
+                    Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                    startActivityForResult(intent, 0);
+                    return;
+                }
+                // 返回最符合给定条件的提供者的名称
+                String bestProvider = mLocationManager.getBestProvider(getCriteria(), true);
+                if (bestProvider == null) {
+                    Toast.makeText(MapActivity.this, "定位失败，建议在室外定位", Toast.LENGTH_SHORT).show();
+                } else {
+                    // 位置信息，通过Location可以获取时间、经纬度、海拔等位置信息
+                    @SuppressLint("MissingPermission") Location location = mLocationManager.getLastKnownLocation(bestProvider);
+                    if (location == null) {
+                        Toast.makeText(MapActivity.this, "定位失败，建议在室外定位", Toast.LENGTH_SHORT).show();
+                    } else {
+                        updateView(location.getLongitude(), location.getLatitude());
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     };
@@ -346,7 +372,7 @@ public class MapActivity extends AppCompatActivity {
      *
      * @return
      */
-    private Criteria getCriteria() {
+    private Criteria getCriteria() throws Exception {
         Criteria criteria = new Criteria();
         // 设置定位精确度 Criteria.ACCURACY_COARSE比较粗略，Criteria.ACCURACY_FINE则比较精细
         criteria.setAccuracy(Criteria.ACCURACY_FINE);
@@ -373,7 +399,7 @@ public class MapActivity extends AppCompatActivity {
      * @param longitude
      * @param latitude
      */
-    private void updateView(double longitude, double latitude) {
+    private void updateView(double longitude, double latitude) throws Exception {
         // 获取地图坐标点
         Dot mdot = new Dot(longitude, latitude);
         mMapView.zoomToCenter(mdot, 0.005, true);
@@ -400,7 +426,7 @@ public class MapActivity extends AppCompatActivity {
      * @param point
      * @return
      */
-    private List<FeatureBean> getFeatureByPoint(VectorLayer vectorLayer, Dot point) {
+    private List<FeatureBean> getFeatureByPoint(VectorLayer vectorLayer, Dot point) throws Exception {
         List<FeatureBean> res=new ArrayList<>();
         Fields fields = vectorLayer.getFields();
         for(short i=0;i<fields.getFieldCount();i++){
@@ -447,7 +473,7 @@ public class MapActivity extends AppCompatActivity {
      *
      * @return
      */
-    private VectorLayer getActivLayer() {
+    private VectorLayer getActivLayer() throws Exception {
         com.zondy.mapgis.core.map.Map map = mMapView.getMap();
         // 获取查询图层对象（指定区图层）
         for (int i = 0; i < map.getLayerCount(); i++) {
