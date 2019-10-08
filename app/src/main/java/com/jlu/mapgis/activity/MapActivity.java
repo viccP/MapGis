@@ -17,7 +17,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -42,7 +42,6 @@ import com.zondy.mapgis.core.map.MapLayer;
 import com.zondy.mapgis.core.map.VectorLayer;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -55,6 +54,9 @@ import java.util.Set;
  * 地图活动页
  */
 public class MapActivity extends AppCompatActivity {
+
+    private static final String TAG = "MapActivity";
+
     // 地图容器
     private MapView mMapView;
 
@@ -79,15 +81,22 @@ public class MapActivity extends AppCompatActivity {
     //要素图
     private Map<String,Feature> featureMap=new HashMap<>();
 
+    //地图名称
+    private Map<String,String> layerMap=new HashMap<String,String>(){
+        {
+            put("土地质量综合属性.WP","ZLDWMC");
+            put("重金属综合评价结果.WP","QSDWMC");
+        }
+    };
 
     /**
-     * @description:创建活动时的回调. <br/>
+     * @description: 创建活动时的回调. <br/>
      *
      * @author liboqiang
-     * @date:2018/11/28
+     * @date: 2018/11/28
      * @since JDK 1.6
      *
-     * @param savedInstanceState
+     * @param savedInstanceState:保存的实例状态
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -106,10 +115,9 @@ public class MapActivity extends AppCompatActivity {
 
                         //构建工具栏
                         String mapName = intent.getStringExtra("mapName");
-                        StringBuilder toolBarTitle = new StringBuilder();
-                        toolBarTitle.append("当前地图").append("  ").append(mapName);
-                        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-                        toolbar.setTitle(toolBarTitle.toString());
+                        String toolBarTitle="当前地图"+"  "+mapName;
+                        Toolbar toolbar = findViewById(R.id.toolbar);
+                        toolbar.setTitle(toolBarTitle);
                         setSupportActionBar(toolbar);
 
                         //初始化组件
@@ -130,46 +138,49 @@ public class MapActivity extends AppCompatActivity {
             });
         }
         catch(Exception e){
-            e.printStackTrace();
+            Log.e(TAG,"地图加载异常",e);
         }
     }
 
     /**
-     * @description:初始化搜索框. <br/>
+     * @description: 初始化搜索框. <br/>
      *
      * @author liboqiang
-     * @date:2018/12/3
+     * @date: 2018/12/3
      * @since JDK 1.6
      *
      */
-    private void initSearchView() throws Exception {
-        searchView = (MaterialSearchView) findViewById(R.id.search_view);
+    private void initSearchView(){
+        searchView = findViewById(R.id.search_view);
         searchView.setHint("请输入要在地图中搜索的内容");
         searchView.setSuggestions(getAllFeatureName());
 
     }
 
     /**
-     * @description:获取所有要素描述. <br/>
+     * @description: 获取所有要素描述. <br/>
      *
      * @author liboqiang
-     * @date:2018/12/3
+     * @date: 2018/12/3
      * @since JDK 1.6
      *
-     * @return
      */
-    private String[] getAllFeatureName() throws Exception {
+    private String[] getAllFeatureName(){
         VectorLayer vectorLayer=getActivLayer();
         if(vectorLayer!=null){
+            String filedName=layerMap.get(vectorLayer.getName());
             FeatureQuery featureQuery = new FeatureQuery(vectorLayer);
-            featureQuery.setOutFields("ZLDWMC");
+            featureQuery.setOutFields(filedName);
             FeaturePagedResult res = featureQuery.query();
             int pageCount = res.getPageCount();
             Set<String> resultLst=new HashSet<>();
             for(int i=0;i<pageCount;i++){
                 List<Feature> datas = res.getPage(i);
                 for(Feature feature:datas){
-                    String memo = feature.getAttributes().get("ZLDWMC");
+                    String memo = feature.getAttributes().get(filedName);
+                    if(memo==null){
+                        memo="";
+                    }
                     resultLst.add(memo);
                     featureMap.put(memo,feature);
                 }
@@ -183,14 +194,13 @@ public class MapActivity extends AppCompatActivity {
 
 
     /**
-     * @description:生成菜单. <br/>
+     * @description: 生成菜单. <br/>
      *
      * @author liboqiang
-     * @date:2018/11/30
+     * @date: 2018/11/30
      * @since JDK 1.6
      *
-     * @param menu
-     * @return
+     * @param menu:菜单
      */
     @Override
     public boolean onCreateOptionsMenu(Menu menu)  {
@@ -203,22 +213,22 @@ public class MapActivity extends AppCompatActivity {
 
 
     /**
-     * @description:初始化组件. <br/>
+     * @description: 初始化组件. <br/>
      *
      * @author liboqiang
-     * @date:2018/11/29
+     * @date: 2018/11/29
      * @since JDK 1.6
      *
      */
-    private void initCoponet() throws Exception {
+    private void initCoponet(){
         // 悬浮按钮
-        fab=(FloatingActionButton) findViewById(R.id.fab);
+        fab=findViewById(R.id.fab);
         //获取地图组件
-        mMapView = (MapView) findViewById(R.id.map_information);
+        mMapView = findViewById(R.id.map_information);
         //获取对话框
         View dialogView = View.inflate(MapActivity.this, R.layout.feature_dialog, null);
         //获取属性列表
-        featureListView = (ListView) dialogView.findViewById(R.id.featureList);
+        featureListView = dialogView.findViewById(R.id.featureList);
         dialog = new AlertDialog.Builder(MapActivity.this).create();// 创建对话框
         dialog.setIcon(R.mipmap.ic_launcher);// 设置对话框icon
         dialog.setTitle("查看地图信息");// 设置对话框标题
@@ -236,31 +246,30 @@ public class MapActivity extends AppCompatActivity {
 
 
     /**
-     * @description:初始化地图. <br/>
+     * @description: 初始化地图. <br/>
      *
      * @author liboqiang
-     * @date:2018/11/28
+     * @date: 2018/11/28
      * @since JDK 1.6
      */
-    private void initMap() throws Exception {
+    private void initMap(){
         mMapView.loadFromFile(path);
         // 显示缩放按钮
-        mMapView.setZoomControlsEnabled(false);
+       // mMapView.setZoomControlsEnabled(false);
         // 显示图标
         mMapView.setShowLogo(true);
         // 根据屏幕的高宽视图中心坐标点
-        DisplayMetrics dm = getResources().getDisplayMetrics();
+        //DisplayMetrics dm = getResources().getDisplayMetrics();
         // 初始获取当前视窗的中心点（窗口坐标）
-        PointF vPoint = new PointF(dm.widthPixels - 60, 60);
+        //PointF vPoint = new PointF(dm.widthPixels - 60, 60);
         // 初始开启短按事件监听
         mMapView.setTapListener(mapViewTapListener);
     }
 
     /**
-     * @description:地图点击事件监听. <br/>
+     * @description: 地图点击事件监听. <br/>
      *
-     * @author liboqiang
-     * @date:2018/11/29
+     * @date: 2018/11/29
      * @since JDK 1.6
      *
      */
@@ -270,24 +279,25 @@ public class MapActivity extends AppCompatActivity {
                 //点坐标转换
                 Dot point = mMapView.viewPointToMapPoint(pointf);
                 VectorLayer vectorLayer=getActivLayer();
-                List<FeatureBean> featureLst= getFeatureByPoint(vectorLayer,point);
-                if(!CollectionUtils.isEmpty(featureLst)){
-                    //弹出列表
-                    FeatureAdapter arrayAdapter = new FeatureAdapter(MapActivity.this,R.layout.feature_bean,featureLst);
-                    featureListView.setAdapter(arrayAdapter);
-                    dialog.show();
+                if(vectorLayer!=null){
+                    List<FeatureBean> featureLst= getFeatureByPoint(vectorLayer,point);
+                    if(!CollectionUtils.isEmpty(featureLst)){
+                        //弹出列表
+                        FeatureAdapter arrayAdapter = new FeatureAdapter(MapActivity.this,R.layout.feature_bean,featureLst);
+                        featureListView.setAdapter(arrayAdapter);
+                        dialog.show();
+                    }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.e(TAG,"地图触摸监听异常",e);
             }
         }
     };
 
     /**
-     * @description:点击事件监听. <br/>
+     * @description: 点击事件监听. <br/>
      *
-     * @author liboqiang
-     * @date:2018/12/3
+     * @date: 2018/12/3
      * @since JDK 1.6
      *
      */
@@ -301,11 +311,7 @@ public class MapActivity extends AppCompatActivity {
                 mMapView.getGraphicsOverlay().removeAllGraphics();
                 // 获取要素对应的图形
                 List<Graphic> graphics = feature.toGraphics(true);
-                Dot dot=null;
-                for(Graphic graphic:graphics){
-                    dot = graphic.getCenterPoint();
-                    break;
-                }
+                Dot dot=graphics.get(0).getCenterPoint();
                 if(dot !=null){
                     mMapView.zoomToCenter(dot,0.005,false);
                 }
@@ -324,10 +330,9 @@ public class MapActivity extends AppCompatActivity {
     };
 
     /**
-     * @description:浮动按钮点击回调. <br/>
+     * @description: 浮动按钮点击回调. <br/>
      *
-     * @author liboqiang
-     * @date:2018/11/30
+     * @date: 2018/11/30
      * @since JDK 1.6
      *
      */
@@ -336,43 +341,45 @@ public class MapActivity extends AppCompatActivity {
             // 提供了访问系统位置服务。 这些 服务允许应用程序获得的定期更新 设备的地理位置
             try {
                 LocationManager mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-                // 返回当前启用/禁用状态给定的提供者。
-                if (!mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                    Toast.makeText(MapActivity.this, "请开启GPS", Toast.LENGTH_SHORT).show();
-                    // 打开GPS操作
-                    Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                    startActivityForResult(intent, 0);
-                    return;
-                }
-                // 返回最符合给定条件的提供者的名称
-                String bestProvider = mLocationManager.getBestProvider(getCriteria(), true);
-                if (bestProvider == null) {
-                    Toast.makeText(MapActivity.this, "定位失败，建议在室外定位", Toast.LENGTH_SHORT).show();
-                } else {
-                    // 位置信息，通过Location可以获取时间、经纬度、海拔等位置信息
-                    @SuppressLint("MissingPermission") Location location = mLocationManager.getLastKnownLocation(bestProvider);
-                    if (location == null) {
+                if(mLocationManager!=null){
+                    // 返回当前启用/禁用状态给定的提供者。
+                    if (!mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                        Toast.makeText(MapActivity.this, "请开启GPS", Toast.LENGTH_SHORT).show();
+                        // 打开GPS操作
+                        Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                        startActivityForResult(intent, 0);
+                        return;
+                    }
+
+                    // 返回最符合给定条件的提供者的名称
+                    String bestProvider = mLocationManager.getBestProvider(getCriteria(), true);
+                    if (bestProvider == null) {
                         Toast.makeText(MapActivity.this, "定位失败，建议在室外定位", Toast.LENGTH_SHORT).show();
                     } else {
-                        updateView(location.getLongitude(), location.getLatitude());
+                        // 位置信息，通过Location可以获取时间、经纬度、海拔等位置信息
+                        @SuppressLint("MissingPermission") Location location = mLocationManager.getLastKnownLocation(bestProvider);
+                        if (location == null) {
+                            Toast.makeText(MapActivity.this, "定位失败，建议在室外定位", Toast.LENGTH_SHORT).show();
+                        } else {
+                            updateView(location.getLongitude(), location.getLatitude());
+                        }
                     }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.e(TAG,"定位异常",e);
             }
         }
     };
 
     /**
-     * @description:获取标准. <br/>
+     * @description: 获取标准. <br/>
      *
      * @author liboqiang
-     * @date:2018/11/30
+     * @date: 2018/11/30
      * @since JDK 1.6
      *
-     * @return
      */
-    private Criteria getCriteria() throws Exception {
+    private Criteria getCriteria(){
         Criteria criteria = new Criteria();
         // 设置定位精确度 Criteria.ACCURACY_COARSE比较粗略，Criteria.ACCURACY_FINE则比较精细
         criteria.setAccuracy(Criteria.ACCURACY_FINE);
@@ -390,16 +397,13 @@ public class MapActivity extends AppCompatActivity {
     }
 
     /**
-     * @description:更新地图. <br/>
+     * @description: 更新地图. <br/>
      *
      * @author liboqiang
-     * @date:2018/11/30
+     * @date: 2018/11/30
      * @since JDK 1.6
-     *
-     * @param longitude
-     * @param latitude
      */
-    private void updateView(double longitude, double latitude) throws Exception {
+    private void updateView(double longitude, double latitude){
         // 获取地图坐标点
         Dot mdot = new Dot(longitude, latitude);
         mMapView.zoomToCenter(mdot, 0.005, true);
@@ -416,17 +420,14 @@ public class MapActivity extends AppCompatActivity {
 
 
     /**
-     * @description:获取所有要素. <br/>
+     * @description: 获取所有要素. <br/>
      *
      * @author liboqiang
-     * @date:2018/11/29
+     * @date: 2018/11/29
      * @since JDK 1.6
      *
-     * @param vectorLayer
-     * @param point
-     * @return
      */
-    private List<FeatureBean> getFeatureByPoint(VectorLayer vectorLayer, Dot point) throws Exception {
+    private List<FeatureBean> getFeatureByPoint(VectorLayer vectorLayer, Dot point){
         List<FeatureBean> res=new ArrayList<>();
         Fields fields = vectorLayer.getFields();
         for(short i=0;i<fields.getFieldCount();i++){
@@ -465,21 +466,21 @@ public class MapActivity extends AppCompatActivity {
     }
 
     /**
-     * @description:获取活动层. <br/>
+     * @description: 获取活动层. <br/>
      *
      * @author liboqiang
-     * @date:2018/11/29
+     * @date: 2018/11/29
      * @since JDK 1.6
      *
-     * @return
      */
-    private VectorLayer getActivLayer() throws Exception {
+    private VectorLayer getActivLayer(){
         com.zondy.mapgis.core.map.Map map = mMapView.getMap();
         // 获取查询图层对象（指定区图层）
         for (int i = 0; i < map.getLayerCount(); i++) {
             MapLayer mapLayer = map.getLayer(i);
-            if ("土地质量综合属性.WP".equals(mapLayer.getName())) {
-               return (VectorLayer) mapLayer;
+            String layName=mapLayer.getName();
+            if(layerMap.containsKey(layName)){
+                return (VectorLayer) mapLayer;
             }
         }
         return null;

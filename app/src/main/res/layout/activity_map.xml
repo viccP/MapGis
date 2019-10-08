@@ -16,7 +16,8 @@
     <com.zondy.mapgis.android.mapview.MapView
         android:id="@+id/map_information"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"></com.zondy.mapgis.android.mapview.MapView>
+        android:layout_height="wrap_content">
+    </com.zondy.mapgis.android.mapview.MapView>
 
     <FrameLayout
         android:layout_width="match_parent"

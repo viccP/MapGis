@@ -14,13 +14,12 @@ import android.support.v7.app.AppCompatActivity;
 public class FeatureListActivity extends AppCompatActivity {
 
     /**
-     * @description:创建活动页时的回调. <br/>
+     * @description: 创建活动页时的回调. <br/>
      *
      * @author liboqiang
-     * @date:2018/11/29
+     * @date: 2018/11/29
      * @since JDK 1.6
      *
-     * @param savedInstanceState
      */
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {

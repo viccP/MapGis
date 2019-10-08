@@ -23,8 +23,6 @@ public class Utils {
 
     /**
      * 获取地图文件
-     * @param rootPath
-     * @return
      */
     public static List<MapFile> getMap(String rootPath) {
         List<MapFile> res=new ArrayList<>();
@@ -40,15 +38,28 @@ public class Utils {
     }
 
     /**
+     * 获取地图文件
+     */
+    public static List<MapFile> getMap(File rootDir) {
+        List<MapFile> res=new ArrayList<>();
+        List<File> files = getFileList(rootDir);
+        for(File file:files){
+            MapFile mapFile=new MapFile();
+            mapFile.setFolder(file.getParent());
+            mapFile.setFileName(file.getName());
+            res.add(mapFile);
+        }
+        return res;
+    }
+
+    /**
      *
      * getFileList:(获取文件列表：递归调用). <br/>
      *
      * @author liboqiang
-     * @param dir
-     * @return
      * @since JDK 1.6
      */
-    public static List<File> getFileList(File dir) {
+    private static List<File> getFileList(File dir) {
         List<File> filelist = new ArrayList<>();
         //如果传入的是文件
         if (!dir.isDirectory()) {
@@ -71,8 +82,6 @@ public class Utils {
                 // 判断文件名是否以给定扩展名结尾
                 else if (fileName.endsWith(FILE_EXT_TYPE)) {
                     filelist.add(file);
-                } else {
-                    continue;
                 }
             }
         }
