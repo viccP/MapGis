@@ -174,7 +174,7 @@ public class MainActivity extends AppCompatActivity {
                 if (file.mkdirs()) {
                     Log.d(TAG,"目录"+file.getPath()+"创建成功");
                 }else{
-                    Log.e(TAG,"奴鲁"+file.getPath()+"创建失败");
+                    Log.e(TAG,"目录"+file.getPath()+"创建失败");
                 }
             }
             // 判断路径是否为文件夹
