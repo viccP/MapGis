@@ -177,11 +177,11 @@ public class MainActivity extends AppCompatActivity {
                     Log.e(TAG,"奴鲁"+file.getPath()+"创建失败");
                 }
             }
-            // 判断文件全路径是否为文件夹,如果是上面已经上传,不需要解压
+            // 判断路径是否为文件夹
             if (new File(outPath).isDirectory()) {
                 continue;
             }
-            // 输出文件路径信息
+            // 写文件
             OutputStream out = new FileOutputStream(outPath);
             byte[] buf1 = new byte[1024];
             int len;

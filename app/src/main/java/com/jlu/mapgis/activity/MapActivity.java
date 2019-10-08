@@ -132,7 +132,7 @@ public class MapActivity extends AppCompatActivity {
                         //搜索按钮事件
                         searchView.setOnQueryTextListener(searchViewListener);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        Log.e(TAG,"MapGis授权失败",e);
                     }
                 }
             });
