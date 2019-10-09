@@ -24,6 +24,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -113,13 +114,15 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             for (String filename : files) {
-                in = assetManager.open(filename);
-                File outFile = new File(getExternalFilesDir(null), filename);
-                out = new FileOutputStream(outFile);
-                copyFile(in, out);
-                out.flush();
-                //解压文件删除源文件
-                unzipFile(outFile);
+                if(filename.endsWith(".zip")){
+                    in = assetManager.open(filename);
+                    File outFile = new File(getExternalFilesDir(null), filename);
+                    out = new FileOutputStream(outFile);
+                    copyFile(in, out);
+                    out.flush();
+                    //解压文件删除源文件
+                    unzipFile(outFile);
+                }
             }
         } catch (Exception e) {
             Log.e(TAG,"copy assets文件失败",e);
@@ -161,7 +164,7 @@ public class MainActivity extends AppCompatActivity {
       */
     private void unzipFile(File zipFile) throws IOException {
         // 解压文件
-        ZipFile zip = new ZipFile(zipFile);
+        ZipFile zip = new ZipFile(zipFile,Charset.forName("gbk"));
         String descDir=zipFile.getParent();
         for (Enumeration<?> entries = zip.entries(); entries.hasMoreElements();) {
             ZipEntry entry = (ZipEntry) entries.nextElement();
