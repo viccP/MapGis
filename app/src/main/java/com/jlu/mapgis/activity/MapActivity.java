@@ -255,7 +255,7 @@ public class MapActivity extends AppCompatActivity {
     private void initMap(){
         mMapView.loadFromFile(path);
         // 显示缩放按钮
-       // mMapView.setZoomControlsEnabled(false);
+        mMapView.setZoomControlsEnabled(false);
         // 显示图标
         mMapView.setShowLogo(true);
         // 根据屏幕的高宽视图中心坐标点
