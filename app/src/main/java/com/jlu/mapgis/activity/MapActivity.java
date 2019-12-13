@@ -63,9 +63,6 @@ public class MapActivity extends AppCompatActivity {
     // 手机存储根路径
     public final static String rootPath = android.os.Environment.getExternalStorageDirectory().getPath();
 
-    // 地图文件路径
-    private String path;
-
     // 属性列表
     private ListView featureListView;
 
@@ -100,61 +97,78 @@ public class MapActivity extends AppCompatActivity {
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        try {
-            super.onCreate(savedInstanceState);
-            setContentView(R.layout.activity_map);
-
-            com.zondy.mapgis.android.environment.Environment.initialize(rootPath, this);
-            com.zondy.mapgis.android.environment.Environment.setSystemLibraryPath(rootPath);
-            com.zondy.mapgis.android.environment.Environment.requestAuthorization(this, new Environment.AuthorizeCallback() {
-                public void onComplete() {
-                    try {
-                        //获取前一个activity传递的参数
-                        Intent intent = getIntent();
-                        path = intent.getStringExtra("mapPath");
-
-                        //构建工具栏
-                        String mapName = intent.getStringExtra("mapName");
-                        String toolBarTitle="当前地图"+"  "+mapName;
-                        Toolbar toolbar = findViewById(R.id.toolbar);
-                        toolbar.setTitle(toolBarTitle);
-                        setSupportActionBar(toolbar);
-
-                        //初始化组件
-                        initCoponet();
-
-                        //浮动按钮点击事件
-                        fab.setOnClickListener(fabClickListener);
-
-                        initMap();
-                        //初始化搜索框
-                        initSearchView();
-                        //搜索按钮事件
-                        searchView.setOnQueryTextListener(searchViewListener);
-                    } catch (Exception e) {
-                        Log.e(TAG,"MapGis授权失败",e);
-                    }
-                }
-            });
-        }
-        catch(Exception e){
-            Log.e(TAG,"地图加载异常",e);
-        }
+        super.onCreate(savedInstanceState);
     }
 
     /**
-     * @description: 初始化搜索框. <br/>
+     * :(运行时加载). <br/>
      *
      * @author liboqiang
-     * @date: 2018/12/3
+     * @params
+     * @return
      * @since JDK 1.6
-     *
      */
-    private void initSearchView(){
+    @Override
+    protected void onResume() {
+        super.onResume();
+        setContentView(R.layout.activity_map);
+        //初始化组件
         searchView = findViewById(R.id.search_view);
-        searchView.setHint("请输入要在地图中搜索的内容");
-        searchView.setSuggestions(getAllFeatureName());
+        mMapView = findViewById(R.id.map_information);
+        fab=findViewById(R.id.fab);
 
+        //获取前一个activity传递的参数
+        final Intent intent = getIntent();
+        //构建工具栏
+        String mapName = intent.getStringExtra("mapName");
+        String toolBarTitle="当前地图"+"  "+mapName;
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setTitle(toolBarTitle);
+        setSupportActionBar(toolbar);
+
+        com.zondy.mapgis.android.environment.Environment.initialize(rootPath, this);
+        com.zondy.mapgis.android.environment.Environment.setSystemLibraryPath(rootPath);
+        com.zondy.mapgis.android.environment.Environment.requestAuthorization(this, new Environment.AuthorizeCallback() {
+            public void onComplete() {
+                try {
+                    //获取地图组件
+                    mMapView.loadFromFileAsync(intent.getStringExtra("mapPath"));
+                    mMapView.setMapLoadListener(new MapView.MapViewMapLoadListener() {
+                        @Override
+                        public void mapViewWillStartLoadingMap(MapView mapView, String s) {
+                        }
+                        @Override
+                        public void mapViewDidFinishLoadingMap(MapView mapView, String s) {
+                            // 显示缩放按钮
+                            mMapView.setZoomControlsEnabled(false);
+                            // 显示图标
+                            mMapView.setShowLogo(true);
+                            // 根据屏幕的高宽视图中心坐标点
+                            //DisplayMetrics dm = getResources().getDisplayMetrics();
+                            // 初始获取当前视窗的中心点（窗口坐标）
+                            //PointF vPoint = new PointF(dm.widthPixels - 60, 60);
+                            // 初始开启短按事件监听
+                            mMapView.setTapListener(mapViewTapListener);
+                            //初始化搜索框
+                            searchView.setHint("请输入要在地图中搜索的内容");
+                            searchView.setSuggestions(getAllFeatureName());
+                            //搜索按钮事件
+                            searchView.setOnQueryTextListener(searchViewListener);
+                            //初始化组件
+                            initCoponet();
+                            //浮动按钮点击事件
+                            fab.setOnClickListener(fabClickListener);
+                        }
+                        @Override
+                        public void mapViewDidFailLoadingMap(MapView mapView, String s) {
+
+                        }
+                    });
+                } catch (Exception e) {
+                    Log.e(TAG,"MapGis授权失败",e);
+                }
+            }
+        });
     }
 
     /**
@@ -221,10 +235,6 @@ public class MapActivity extends AppCompatActivity {
      *
      */
     private void initCoponet(){
-        // 悬浮按钮
-        fab=findViewById(R.id.fab);
-        //获取地图组件
-        mMapView = findViewById(R.id.map_information);
         //获取对话框
         View dialogView = View.inflate(MapActivity.this, R.layout.feature_dialog, null);
         //获取属性列表
@@ -242,28 +252,6 @@ public class MapActivity extends AppCompatActivity {
                 dialog.dismiss();
             }
         });
-    }
-
-
-    /**
-     * @description: 初始化地图. <br/>
-     *
-     * @author liboqiang
-     * @date: 2018/11/28
-     * @since JDK 1.6
-     */
-    private void initMap(){
-        mMapView.loadFromFile(path);
-        // 显示缩放按钮
-        mMapView.setZoomControlsEnabled(false);
-        // 显示图标
-        mMapView.setShowLogo(true);
-        // 根据屏幕的高宽视图中心坐标点
-        //DisplayMetrics dm = getResources().getDisplayMetrics();
-        // 初始获取当前视窗的中心点（窗口坐标）
-        //PointF vPoint = new PointF(dm.widthPixels - 60, 60);
-        // 初始开启短按事件监听
-        mMapView.setTapListener(mapViewTapListener);
     }
 
     /**
@@ -350,7 +338,6 @@ public class MapActivity extends AppCompatActivity {
                         startActivityForResult(intent, 0);
                         return;
                     }
-
                     // 返回最符合给定条件的提供者的名称
                     String bestProvider = mLocationManager.getBestProvider(getCriteria(), true);
                     if (bestProvider == null) {

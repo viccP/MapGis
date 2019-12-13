@@ -6,15 +6,11 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
-import android.view.Window;
 
 import com.jlu.mapgis.R;
 import com.jlu.mapgis.bean.MapBean;
 import com.jlu.mapgis.db.SQLiteDbHelper;
-
-import java.util.List;
 
 public class AboutActivity extends AppCompatActivity {
 
