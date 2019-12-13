@@ -1,7 +1,10 @@
 package com.jlu.mapgis.activity;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -17,12 +20,6 @@ public class AboutActivity extends AppCompatActivity {
 
     private static final String TAG = "AboutActivity";
 
-    //设置地图页
-    private Intent mapConfigIntent = null;
-
-    //设置管理页
-    private Intent mapManagerIntent = null;
-
     /**
      * :(关于页面的创建监听). <br/>
      *
@@ -35,9 +32,20 @@ public class AboutActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_about);
-
-        mapConfigIntent=new Intent(this, MapConfigActivity.class);
-        mapManagerIntent=new Intent(this, MapManagerActivity.class);
+        //获取权限
+        int permission = ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{
+                            Manifest.permission.READ_EXTERNAL_STORAGE,
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.INTERNET
+                    },
+                    1
+            );
+        }
         //退出系统按钮
         findViewById(R.id.exit_app_btn).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -57,7 +65,8 @@ public class AboutActivity extends AppCompatActivity {
         findViewById(R.id.map_cfg_btn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startActivity(mapConfigIntent);
+                Intent intent= new Intent(AboutActivity.this,MapConfigActivity.class);
+                startActivity(intent);
             }
         });
 
@@ -65,7 +74,8 @@ public class AboutActivity extends AppCompatActivity {
         findViewById(R.id.map_mgr_btn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startActivity(mapManagerIntent);
+                Intent intent= new Intent(AboutActivity.this,MapManagerActivity.class);
+                startActivity(intent);
             }
         });
 
