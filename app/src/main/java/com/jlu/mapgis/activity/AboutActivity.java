@@ -8,26 +8,15 @@ import android.view.View;
 import android.view.Window;
 
 import com.jlu.mapgis.R;
+import com.jlu.mapgis.bean.MapBean;
+import com.jlu.mapgis.db.SQLiteDbHelper;
+
+import java.util.List;
 
 public class AboutActivity extends AppCompatActivity {
 
     private static final String TAG = "AboutActivity";
 
-    /**
-     * :(进入地图监听). <br/>
-     *
-     * @author liboqiang
-     * @Param
-     * @Return
-     * @since JDK 1.6
-     */
-//    private View.OnClickListener enterMapClickListner=new View.OnClickListener() {
-//        @Override
-//        public void onClick(View view) {
-//            Intent intent= new Intent(AboutActivity.this,MainActivity.class);
-//            startActivity(intent);
-//        }
-//    };
     //设置地图页
     private Intent mapConfigIntent = null;
 
@@ -77,6 +66,22 @@ public class AboutActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 startActivity(mapManagerIntent);
+            }
+        });
+
+        //进入地图按钮
+        findViewById(R.id.enter_map_btn).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //找到默认地图
+                SQLiteDbHelper db=new SQLiteDbHelper(AboutActivity.this);
+                MapBean selMap=db.selectDefaultMap();
+                //进入地图
+                Intent intent= new Intent(AboutActivity.this,MapActivity.class);
+                intent.putExtra("mapPath",selMap.getPath());
+                intent.putExtra("mapFolder",selMap.getFolder());
+                intent.putExtra("mapName",selMap.getName());
+                startActivity(intent);
             }
         });
     }

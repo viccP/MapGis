@@ -140,4 +140,52 @@ public class SQLiteDbHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_MAP_CFG,"path=?",new String[]{path});
     }
+
+    /**
+     * :(更新默认地图). <br/>
+     *
+     * @author liboqiang
+     * @Param
+     * @Return
+     * @since JDK 1.6
+     */
+    public void updateDefaultMap(String path) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        //修改以前的默认地图
+        ContentValues orgValue = new ContentValues();
+        orgValue.put("is_default",0);
+        db.update(TABLE_MAP_CFG,orgValue,"is_default=?",new String[]{"1"});
+
+        //设置新的默认地图
+        ContentValues targetValue = new ContentValues();
+        targetValue.put("is_default",1);
+        db.update(TABLE_MAP_CFG,targetValue,"path=?",new String[]{path});
+
+    }
+
+
+    /**
+     * :(查询默认地图). <br/>
+     *
+     * @author liboqiang
+     * @params
+     * @return
+     * @since JDK 1.6
+     */
+    public MapBean selectDefaultMap() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.query("map_cfg",null,"is_default=?",new String[]{"1"},null,null,null,null);
+        MapBean mapBean=new MapBean();
+        while(cursor.moveToNext()){
+            String name = cursor.getString(cursor.getColumnIndex("name"));
+            String path= cursor.getString(cursor.getColumnIndex("path"));
+            String folder=cursor.getString(cursor.getColumnIndex("folder"));
+            int isDefault=cursor.getInt(cursor.getColumnIndex("is_default"));
+            mapBean.setName(name);
+            mapBean.setPath(path);
+            mapBean.setFolder(folder);
+            mapBean.setIsDefault(isDefault);
+        }
+        return mapBean;
+    }
 }

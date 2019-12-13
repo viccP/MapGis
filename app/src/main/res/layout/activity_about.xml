@@ -96,7 +96,6 @@
                 </LinearLayout>
 
                 <LinearLayout
-                    android:id="@+id/map_mgr_btn"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_marginBottom="15dp"
@@ -104,7 +103,7 @@
                     android:orientation="horizontal">
 
                     <mehdi.sakout.fancybuttons.FancyButton
-                        android:id="@+id/btn_android3"
+                        android:id="@+id/map_mgr_btn"
                         android:layout_width="105dp"
                         android:layout_height="105dp"
                         android:layout_marginRight="10dp"
