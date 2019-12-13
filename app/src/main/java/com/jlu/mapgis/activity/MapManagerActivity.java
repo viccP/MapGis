@@ -1,22 +1,19 @@
 package com.jlu.mapgis.activity;
 
 import android.app.Activity;
-import android.content.ContentValues;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.os.Looper;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import com.jlu.mapgis.R;
 import com.jlu.mapgis.bean.MapBean;
@@ -24,8 +21,6 @@ import com.jlu.mapgis.db.SQLiteDbHelper;
 import com.jlu.mapgis.util.UriDecoder;
 import com.lucasurbas.listitemview.ListItemView;
 
-import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -35,7 +30,7 @@ import java.util.List;
  */
 public class MapManagerActivity extends AppCompatActivity  {
 
-    private static final int FILE_SELECT_CODEB = 1;
+    private static final int FILE_SELECT_CODE = 1;
 
     private static final String TAG = "MapManagerActivity";
 
@@ -53,29 +48,17 @@ public class MapManagerActivity extends AppCompatActivity  {
                 intent.setType("*/*");//设置类型
                 intent.addCategory(Intent.CATEGORY_OPENABLE);
                 try {
-                    startActivityForResult(Intent.createChooser(intent, "选择文件"), FILE_SELECT_CODEB);
+                    startActivityForResult(Intent.createChooser(intent, "选择文件"), FILE_SELECT_CODE);
                 } catch (android.content.ActivityNotFoundException ex) {
                     Log.e(TAG,"没有找到想要的文件",ex);
                 }
             }
         });
 
-
         //生成列表
-        SQLiteDbHelper conn=new SQLiteDbHelper(this);
-        SQLiteDatabase db = conn.getWritableDatabase();
-        Cursor cursor = db.query("map_cfg",null,null,null,null,null,null,null);
-        List<MapBean> mapList=new ArrayList<>();
-        while(cursor.moveToNext()){
-            String name = cursor.getString(cursor.getColumnIndex("name"));
-            String path= cursor.getString(cursor.getColumnIndex("path"));
-            MapBean bean=new MapBean();
-            bean.setName(name);
-            bean.setPath(path);
-            mapList.add(bean);
-        }
+        SQLiteDbHelper db=new SQLiteDbHelper(this);
+        List<MapBean> mapList = db.selectAllMap();
         initMapList(mapList);
-
     }
 
     /**
@@ -91,16 +74,13 @@ public class MapManagerActivity extends AppCompatActivity  {
         if (resultCode == Activity.RESULT_OK) {
             Uri uri = data.getData();
             String path= UriDecoder.getPath(this,uri);
-            SQLiteDbHelper conn=new SQLiteDbHelper(this);
-            SQLiteDatabase db = conn.getWritableDatabase();
-            //实例化常量值
-            File file=new File(path);
-            ContentValues cValue = new ContentValues();
-            cValue.put("name",file.getName());
-            cValue.put("folder",file.getParent());
-            cValue.put("path",path);
-            db.insert("map_cfg",null,cValue);
+            SQLiteDbHelper db=new SQLiteDbHelper(this);
+            db.insertMap(path);
         }
+        //刷新当前Activity
+        Intent intent = getIntent();
+        finish();
+        startActivity(intent);
     }
 
     /**
@@ -114,13 +94,40 @@ public class MapManagerActivity extends AppCompatActivity  {
     private void initMapList(List<MapBean> mapList) {
         LinearLayout layout = findViewById(R.id.map_mgr_list);
         for(MapBean bean:mapList){
-            ListItemView item=new ListItemView(this);
+            final ListItemView item=new ListItemView(this);
             item.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT));
             item.setDisplayMode(ListItemView.MODE_ICON);
             item.setIconDrawable(ContextCompat.getDrawable(this,R.drawable.trash_can));
             item.setIconColor(ContextCompat.getColor(this, R.color.color_state_checked));
-            item.setSubtitle(bean.getPath());
+            item.setSubtitle(bean.getFolder());
             item.setTitle(bean.getName());
+            //添加监听
+            item.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    new AlertDialog.Builder(MapManagerActivity.this).setTitle("确认删除地图吗？")
+                            .setIcon(R.drawable.information)
+                            .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    // 点击“确认”后的操作
+                                    SQLiteDbHelper db=new SQLiteDbHelper(MapManagerActivity.this);
+                                    db.deleteMap(item.getTitle(),item.getSubtitle());
+
+                                    //刷新当前Activity
+                                    Intent intent = getIntent();
+                                    finish();
+                                    startActivity(intent);
+                                }
+                            })
+                            .setNegativeButton("返回", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    // 点击“返回”后的操作,这里不设置没有任何操作
+                                }
+                            }).show();
+                }
+            });
             layout.addView(item);
         }
     }

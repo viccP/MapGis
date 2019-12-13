@@ -16,7 +16,7 @@ public class MapBean {
     //地图路径
     private String path;
     //地图id
-    private int id;
+    private int isDefault;
 
     public String getName() {
         return name;
@@ -42,11 +42,11 @@ public class MapBean {
         this.path = path;
     }
 
-    public int getId() {
-        return id;
+    public int getIsDefault() {
+        return isDefault;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setIsDefault(int isDefault) {
+        this.isDefault = isDefault;
     }
 }
