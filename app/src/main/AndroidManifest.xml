@@ -49,6 +49,13 @@
             </intent-filter>
         </activity>
 
+        <activity android:name="com.jlu.mapgis.activity.AppInfoActivity">
+            <intent-filter>
+                <action android:name="com.jlu.mapgis.activity.AppInfoActivity" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
         <activity
             android:name="com.jlu.mapgis.activity.MapActivity"
             android:label="Map"

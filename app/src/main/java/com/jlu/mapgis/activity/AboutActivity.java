@@ -57,7 +57,8 @@ public class AboutActivity extends AppCompatActivity {
         findViewById(R.id.app_info_btn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.d(TAG,"debug");
+                Intent intent= new Intent(AboutActivity.this,AppInfoActivity.class);
+                startActivity(intent);
             }
         });
 
